@@ -1,0 +1,5 @@
+{
+    "accel_file": "Kocaeli.txt",
+    "strain_limit": 0.02,
+    "damping": 0.05
+}

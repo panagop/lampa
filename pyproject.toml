@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "lampa"
+version = "0.1.0"
+description = ""
+authors = ["panagop <gpanagop@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.8"
+notebook = "^6.5.2"
+jupyter = "^1.0.0"
+jupyterlab = "^3.5.0"
+seaborn = "^0.12.1"
+streamlit = "^1.14.0" 
+pystrata = "^0.5.0"
+pyexcel = "^0.7.0"
+openpyxl = "^3.0.10"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.15.5"
+autopep8 = "^2.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
