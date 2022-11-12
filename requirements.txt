@@ -9,3 +9,4 @@ gspread_dataframe
 seaborn
 watchfiles
 pystrata
+pyexcel
