@@ -13,10 +13,18 @@ from PIL import Image
 
 from fileloaders import time_accel_txt_to_pystrata_motion
 
+from lampa.input import PyStrataInput
+
 
 st.title('1-D Seismic Site Response Analysis')
 
 st.text('This is a web app for one dimensional ground response analysis \nusing data from seismic motions for the development of \nAcceleration Response Spectra and Spectral Ratio \nPystrata library etc etc')
+
+psi = PyStrataInput(name = 'test1',
+                    time_series_motion={'a': np.array([1]), 't': np.array([2])})
+
+st.write(psi)
+
 
 # load ini json file
 ini_file = r'ini.json'

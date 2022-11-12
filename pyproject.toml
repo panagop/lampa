@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["panagop <gpanagop@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "lampa" },
+]
 
 [tool.poetry.dependencies]
 python = "3.10.8"
@@ -15,6 +18,7 @@ streamlit = "^1.14.0"
 pystrata = "^0.5.0"
 pyexcel = "^0.7.0"
 openpyxl = "^3.0.10"
+dataclasses-json = "^0.5.7"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.15.5"
