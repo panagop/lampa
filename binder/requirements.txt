@@ -11,4 +11,4 @@ watchfiles
 pystrata
 pyexcel
 dataclasses-json
-lampa
+
