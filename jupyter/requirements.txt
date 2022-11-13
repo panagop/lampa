@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+matplotlib
+openpyxl
+altair
+gspread
+gspread_dataframe
+seaborn
+watchfiles
+pystrata
+pyexcel
+dataclasses-json
+lampa
