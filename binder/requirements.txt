@@ -1,4 +1,3 @@
-python-3.10
 streamlit
 pandas
 numpy
@@ -12,3 +11,4 @@ watchfiles
 pystrata
 pyexcel
 dataclasses-json
+lampa
