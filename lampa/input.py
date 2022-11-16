@@ -1,24 +1,13 @@
-﻿import json
-from dataclasses import dataclass
-from enum import Enum, auto
-# from fileinput import filename
-
-import matplotlib.pyplot as plt
+﻿from dataclasses import dataclass
+from dataclasses_json import dataclass_json
+from functools import cached_property
 import numpy as np
 import pandas as pd
-import pyexcel
 import pystrata
-from dataclasses_json import dataclass_json
-from pystrata.site import Profile
 
-import streamlit as st
-
-
-# @dataclass_json
-# @dataclass
-# class LCalculatorType(Enum):
-#     LINEAR_ELASTIC_CALCULATOR = 0
-#     EQUIVALENT_LINEAR_CALCULATOR = 1
+# import json
+# from enum import Enum, auto
+# import pyexcel
 
 
 @dataclass_json
@@ -126,30 +115,38 @@ class LLayer:
 @dataclass
 class LPyStrataInput:
     name: str
-    calculator_type: str # LCalculatorType
+    calculator_type: str  # LCalculatorType
     time_series_motion: LTimeSeriesMotion
     layers: list[LLayer]
 
-    @property
+    @cached_property
     def to_pystrata_profile(self) -> pystrata.site.Profile:
         """Convert to pystrata profile"""
         return pystrata.site.Profile([layer.to_pystrata for layer in self.layers]).auto_discretize()
 
+    # @cached_property
+    # def calculator(self):
+    #     # Create the profile
+    #     profile = self.to_pystrata_profile
+
+    #     # LCalculatorType.LINEAR_ELASTIC_CALCULATOR:
+    #     if self.calculator_type == 'LinearElasticCalculator':
+    #         calc = pystrata.propagation.LinearElasticCalculator()
+    #     # LCalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
+    #     elif self.calculator_type == 'EquivalentElasticCalculator':
+    #         calc = pystrata.propagation.EquivalentLinearCalculator()
+
+    #     calc(self.time_series_motion.to_pystrata, profile,
+    #          profile.location("outcrop", index=-1))
+
+    #     return calc
 
 
-    def do_the_analysis(self):
-        # Create the profile
-        profile = self.to_pystrata_profile
-
-        if self.calculator_type == 'linear': # LCalculatorType.LINEAR_ELASTIC_CALCULATOR:
-            calc = pystrata.propagation.LinearElasticCalculator()
-        elif self.calculator_type == 'eq':  # LCalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
-            calc = pystrata.propagation.EquivalentLinearCalculator()
-
-        calc(self.time_series_motion.to_pystrata, profile, profile.location("outcrop", index=-1))
-
-        return calc
-
+# @dataclass_json
+# @dataclass
+# class LCalculatorType(Enum):
+#     LINEAR_ELASTIC_CALCULATOR = 0
+#     EQUIVALENT_LINEAR_CALCULATOR = 1
 
 # class CalculatorType(Enum):
 #     LINEAR_ELASTIC_CALCULATOR = auto()
