@@ -14,9 +14,16 @@ from pystrata.site import Profile
 import streamlit as st
 
 
+# @dataclass_json
+# @dataclass
+# class LCalculatorType(Enum):
+#     LINEAR_ELASTIC_CALCULATOR = 0
+#     EQUIVALENT_LINEAR_CALCULATOR = 1
+
+
 @dataclass_json
 @dataclass
-class TimeSeriesMotion:
+class LTimeSeriesMotion:
     description: str
     time_step: float
     accels: np.array
@@ -34,7 +41,7 @@ class TimeSeriesMotion:
     def from_txt(filename: str, description: str = "", skiprows: int = 2) -> "TimeSeriesMotion":
         df = pd.read_csv(filename, header=None, skiprows=skiprows,
                          encoding="utf-8", delim_whitespace=True)
-        return TimeSeriesMotion(
+        return LTimeSeriesMotion(
             description=description,
             time_step=np.round(df[0][1] - df[0][0], 6),  # df[0].diff().mean(),
             accels=df[1].to_numpy()
@@ -44,7 +51,7 @@ class TimeSeriesMotion:
     def from_csv(filename: str, description: str = "", delimiter: str = ",", skiprows: int = 1) -> "TimeSeriesMotion":
         df = pd.read_csv(filename, header=None, skiprows=skiprows,
                          encoding="utf-8", delimiter=delimiter)
-        return TimeSeriesMotion(
+        return LTimeSeriesMotion(
             description=description,
             time_step=df[0][1] - df[0][0],  # df[0].diff().mean(),
             accels=df[1].to_numpy()
@@ -54,7 +61,7 @@ class TimeSeriesMotion:
     def from_excel(filename: str, sheet_name: str | int = 0, description: str = "", skiprows: int = 1) -> "TimeSeriesMotion":
         df = pd.read_excel(filename, sheet_name=sheet_name,
                            header=None, skiprows=skiprows)
-        return TimeSeriesMotion(
+        return LTimeSeriesMotion(
             description=description,
             time_step=df[0][1] - df[0][0],  # df[0].diff().mean(),
             accels=df[1].to_numpy()
@@ -63,7 +70,7 @@ class TimeSeriesMotion:
 
 @dataclass_json
 @dataclass
-class SoilType:
+class LSoilType:
     name: str
     unit_wt: float
     damping: float = 0.05
@@ -79,7 +86,7 @@ class SoilType:
 
 @dataclass_json
 @dataclass
-class DarendeliSoilType:
+class LDarendeliSoilType:
     name: str
     unit_wt: float
     plas_index: float = 0.0
@@ -101,9 +108,9 @@ class DarendeliSoilType:
 
 @dataclass_json
 @dataclass
-class Layer:
+class LLayer:
     layer_type: str
-    layer_properties: SoilType | DarendeliSoilType
+    layer_properties: LSoilType | LDarendeliSoilType
     thickness: float
     shear_vel: float
 
@@ -117,16 +124,31 @@ class Layer:
 
 @dataclass_json
 @dataclass
-class PyStrataInput:
+class LPyStrataInput:
     name: str
-    calculator_type: str
-    time_series_motion: TimeSeriesMotion
-    layers: list[Layer]
+    calculator_type: str # LCalculatorType
+    time_series_motion: LTimeSeriesMotion
+    layers: list[LLayer]
 
     @property
     def to_pystrata_profile(self) -> pystrata.site.Profile:
         """Convert to pystrata profile"""
         return pystrata.site.Profile([layer.to_pystrata for layer in self.layers]).auto_discretize()
+
+
+
+    def do_the_analysis(self):
+        # Create the profile
+        profile = self.to_pystrata_profile
+
+        if self.calculator_type == 'linear': # LCalculatorType.LINEAR_ELASTIC_CALCULATOR:
+            calc = pystrata.propagation.LinearElasticCalculator()
+        elif self.calculator_type == 'eq':  # LCalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
+            calc = pystrata.propagation.EquivalentLinearCalculator()
+
+        calc(self.time_series_motion.to_pystrata, profile, profile.location("outcrop", index=-1))
+
+        return calc
 
 
 # class CalculatorType(Enum):
