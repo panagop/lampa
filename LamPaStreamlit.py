@@ -22,9 +22,9 @@ st.title('1-D Seismic Site Response Analysis')
 st.text('This is a web app for one dimensional ground response analysis \nusing data from seismic motions for the development of \nAcceleration Response Spectra and Spectral Ratio \nPystrata library etc etc')
 
 # load ini json file
-# lpsi = LPyStrataInput.from_json_file('ini.json')
-with open('ini.pickle', "rb") as pfile:
-    lpsi = pickle.load(pfile)
+lpsi = LPyStrataInput.from_json_file('streamlit\ini.json')
+# with open('ini.pickle', "rb") as pfile:
+#     lpsi = pickle.load(pfile)
 
 lproject = LProject(lpsi)
 
