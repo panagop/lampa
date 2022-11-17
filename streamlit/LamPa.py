@@ -15,38 +15,59 @@ from lampa.input import LLayer
 from lampa.project import LProject
 
 
+
 st.title('1-D Seismic Site Response Analysis')
 
 st.text('This is a web app for one dimensional ground response analysis \nusing data from seismic motions for the development of \nAcceleration Response Spectra and Spectral Ratio \nPystrata library etc etc')
 
 # load ini json file
 lpsi = LPyStrataInput.from_json_file('ini.json')
-# st.write(lpsi)
+lproject = LProject(lpsi)
 
-st.write(type(lpsi))
+############################################################################################################
+# STEP 1: Load accelerogram
+############################################################################################################
+st.sidebar.markdown('## Seismic Motion')
+with st.sidebar.expander(label='Load accelerogram', expanded=False):
+    accel_filetype = st.radio('Select filetype', options=['xlsx', 'txt', 'csv']) # , 'AT2'
+    uploaded_file = st.file_uploader('Upload your file here', type=[accel_filetype])
 
-# ############################################################################################################
-# # STEP 1: Load accelerogram
-# ############################################################################################################
-# st.sidebar.markdown('### STEP 1: Load accelerogram')
-# with st.sidebar.expander(label='Input accelerogram', expanded=False):
+    if uploaded_file is not None:
+        if accel_filetype == 'txt':
+            ltsm = LTimeSeriesMotion.from_txt(uploaded_file)
+        elif accel_filetype == 'csv':
+            ltsm = LTimeSeriesMotion.from_csv(uploaded_file)
+        elif accel_filetype == 'xlsx':
+            ltsm = LTimeSeriesMotion.from_xlsx(uploaded_file)
+
+        lpsi.time_series_motion = ltsm
+        # input_data['accel_file'] = uploaded_file.name
+        # ts = time_accel_txt_to_pystrata_motion(uploaded_file)
+    else:
+        pass
+        # ts = time_accel_txt_to_pystrata_motion(input_data['accel_file'])
+
+
+st.markdown('## Soil profile')
+st.pyplot(lpsi.to_pystrata_profile.plot("initial_shear_vel").get_figure())
+# st.pyplot(lpsi.to_pystrata_profile.plot("shear_vel").get_figure())
+
+st.markdown('## Seismic motion')
+st.markdown('### Accelerations')
+fig, ax = plt.subplots()
+ax.plot(lpsi.time_series_motion.to_pystrata.times, lpsi.time_series_motion.to_pystrata.accels)
+ax.set(xlabel='time (s)', ylabel='acceleration (g)')
+fig.tight_layout()
+
+st.pyplot(fig)
+st.markdown('### Response spectrum')
+st.pyplot(lproject.response_spectrum().plot().get_figure())
 
 
 
-#     accel_filetype = st.radio('Select filetype', options=['xmlx', 'txt', 'csv', 'AT2'])
-
-#     uploaded_file = st.file_uploader('Upload your file here')
-
-#     if uploaded_file is not None:
-
-#         input_data['accel_file'] = uploaded_file.name
-#         ts = time_accel_txt_to_pystrata_motion(uploaded_file)
-#     else:
-#         ts = time_accel_txt_to_pystrata_motion(input_data['accel_file'])
 
 
-# #image = Image.open ('1d.jpg')
-# #st.image(image, use_column_width=True)
+
 
 
 

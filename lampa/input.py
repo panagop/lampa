@@ -124,13 +124,24 @@ class LPyStrataInput:
         """Convert to pystrata profile"""
         return pystrata.site.Profile([layer.to_pystrata for layer in self.layers]).auto_discretize()
 
+    # def save_json_file(self, filename: str):
+    #     """Save to json file"""
+    #     with open(filename, "w") as f:
+    #         f.write(self.to_json())
+
+    # @staticmethod
+    # def from_json_file(filename: str) -> "LPyStrataInput":
+    #     """Load from json file"""
+    #     with open(filename, "r") as f:
+    #         return LPyStrataInput.from_json(f.read())
+
     def save_json_file(self, filename: str):
         """Save to json file"""
         with open(filename, "w") as f:
-            f.write(self.to_json())
+            f.write(LPyStrataInput.schema().dumps(self))
 
     @staticmethod
     def from_json_file(filename: str) -> "LPyStrataInput":
         """Load from json file"""
         with open(filename, "r") as f:
-            return LPyStrataInput.from_json(f.read())
+            return LPyStrataInput.schema().loads(f.read())
