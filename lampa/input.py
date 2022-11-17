@@ -27,7 +27,7 @@ class LTimeSeriesMotion:
         )
 
     @staticmethod
-    def from_txt(filename: str, description: str = "", skiprows: int = 2) -> "TimeSeriesMotion":
+    def from_txt(filename: str, description: str = "", skiprows: int = 2) -> "LTimeSeriesMotion":
         df = pd.read_csv(filename, header=None, skiprows=skiprows,
                          encoding="utf-8", delim_whitespace=True)
         return LTimeSeriesMotion(
@@ -37,7 +37,7 @@ class LTimeSeriesMotion:
         )
 
     @staticmethod
-    def from_csv(filename: str, description: str = "", delimiter: str = ",", skiprows: int = 1) -> "TimeSeriesMotion":
+    def from_csv(filename: str, description: str = "", delimiter: str = ",", skiprows: int = 1) -> "LTimeSeriesMotion":
         df = pd.read_csv(filename, header=None, skiprows=skiprows,
                          encoding="utf-8", delimiter=delimiter)
         return LTimeSeriesMotion(
@@ -47,7 +47,7 @@ class LTimeSeriesMotion:
         )
 
     @staticmethod
-    def from_excel(filename: str, sheet_name: str | int = 0, description: str = "", skiprows: int = 1) -> "TimeSeriesMotion":
+    def from_excel(filename: str, sheet_name: str | int = 0, description: str = "", skiprows: int = 1) -> "LTimeSeriesMotion":
         df = pd.read_excel(filename, sheet_name=sheet_name,
                            header=None, skiprows=skiprows)
         return LTimeSeriesMotion(
@@ -124,48 +124,13 @@ class LPyStrataInput:
         """Convert to pystrata profile"""
         return pystrata.site.Profile([layer.to_pystrata for layer in self.layers]).auto_discretize()
 
-    # @cached_property
-    # def calculator(self):
-    #     # Create the profile
-    #     profile = self.to_pystrata_profile
+    def save_json_file(self, filename: str):
+        """Save to json file"""
+        with open(filename, "w") as f:
+            f.write(self.to_json())
 
-    #     # LCalculatorType.LINEAR_ELASTIC_CALCULATOR:
-    #     if self.calculator_type == 'LinearElasticCalculator':
-    #         calc = pystrata.propagation.LinearElasticCalculator()
-    #     # LCalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
-    #     elif self.calculator_type == 'EquivalentElasticCalculator':
-    #         calc = pystrata.propagation.EquivalentLinearCalculator()
-
-    #     calc(self.time_series_motion.to_pystrata, profile,
-    #          profile.location("outcrop", index=-1))
-
-    #     return calc
-
-
-# @dataclass_json
-# @dataclass
-# class LCalculatorType(Enum):
-#     LINEAR_ELASTIC_CALCULATOR = 0
-#     EQUIVALENT_LINEAR_CALCULATOR = 1
-
-# class CalculatorType(Enum):
-#     LINEAR_ELASTIC_CALCULATOR = auto()
-#     EQUIVALENT_LINEAR_CALCULATOR = auto()
-
-
-# @dataclass
-# class Input:
-#     time_series_motion: pystrata.motion.TimeSeriesMotion
-#     site_layers: list[pystrata.site.Layer]
-#     calculator_type: CalculatorType
-
-#     strain_limit: float = 0.05
-
-#     def do_the_calcs(self, strain_limit: float = 0.05):
-#         profile = pystrata.site.Profile(self.site_layers).auto_discretize()
-
-#         if self.calculator_type == CalculatorType.LINEAR_ELASTIC_CALCULATOR:
-#             calculator = pystrata.propagation.LinearElasticCalculator()
-#         elif self.calculator_type == CalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
-#             calculator = pystrata.propagation.EquivalentLinearCalculator(
-#                 self.strain_limit)
+    @staticmethod
+    def from_json_file(filename: str) -> "LPyStrataInput":
+        """Load from json file"""
+        with open(filename, "r") as f:
+            return LPyStrataInput.from_json(f.read())
