@@ -18,7 +18,6 @@ from lampa.input import LSoilType, LDarendeliSoilType
 from lampa.input import LLayer
 from lampa.project import LProject
 
-from io import StringIO
 
 
 FREQS = np.logspace(-0.5, 2, num=500)
@@ -26,7 +25,11 @@ FREQS = np.logspace(-0.5, 2, num=500)
 
 st.title('1-D Seismic Site Response Analysis')
 
-st.text('This is a web app for one dimensional ground response analysis \nusing data from seismic motions for the development of \nAcceleration Response Spectra and Spectral Ratio \nPystrata library etc etc')
+st.markdown('This is a web application for one-dimensional site response analysis using linear elastic and equivalent linear analysis.')
+
+st.image('streamlit/img/DaPan.png', width=650)
+st.markdown('[Source: DOI: 10.1785/0120210300](https://pubs.geoscienceworld.org/ssa/bssa/article/doi/10.1785/0120210300/612887/Deep-Neural-Network-Based-Estimation-of-Site)')
+
 
 # load ini json file
 lpsi = LPyStrataInput.from_json_file('streamlit/ini.json')
@@ -55,20 +58,9 @@ with st.sidebar.expander(label='Project input file', expanded=False):
     if uploaded_input is not None:
         file_details = {"FileName": uploaded_input.name,
                         "FileType": uploaded_input.type, "FileSize": uploaded_input.size}
-        st.write(file_details)
 
-        xxx = uploaded_input.read()
-        st.write(type(xxx))
-        lpsi = LPyStrataInput.from_json_binary(uploaded_input.read())
-        # st.write(str(xxx))
-
-        # stringio = StringIO(uploaded_input.getvalue().decode("utf-8"))
-        # lpsi = LPyStrataInput.from_dict(stringio.read())
-        # st.write((stringio.read()))
-        # lpsi = LPyStrataInput.from_json_file(stringio.read())
-        # lproject = LProject(lpsi)
-        # with open(uploaded_input, "rb") as pfile:
-        #     lpsi = pickle.load(pfile)
+        utf_read = uploaded_input.read().decode('utf-8')
+        lpsi = LPyStrataInput.schema().loads(utf_read)
 
 st.sidebar.markdown('---')
 
@@ -223,9 +215,11 @@ with st_options_sidebar_expander:
     doc.theme = interactive_chart_theme
 
 
-# ******************************************************************
-# Main view
-# ******************************************************************
+##################################################################################
+# ********************************************************************************
+# ********** Main view ***********************************************************
+# ********************************************************************************
+##################################################################################
 
 ###################
 # Seismic Motion
@@ -374,7 +368,7 @@ with st_results_main_expander:
         freqs=FREQS, damping=results_damping, location_index=-1)
 
     if inteactive_charts:
-        p = figure(x_axis_label='Period (g)',
+        p = figure(x_axis_label='Period (sec)',
                    y_axis_label='Spectral Acceleration (g)')
         p.line(out_index0.periods, out_index0.values,
                legend_label='Ground surface', color='red')
@@ -388,7 +382,7 @@ with st_results_main_expander:
             out_index0.periods, out_index0.values, linewidth=1.0, color='red', label='Ground surface')
         ax_results_spectra.plot(
             out_index1.periods, out_index1.values, linewidth=1.0, color='blue', label='Bedrock')
-        ax_results_spectra.set(xlabel='Period (s)',
+        ax_results_spectra.set(xlabel='Period (sec)',
                                ylabel='Spectral Acceleration (g)')
         ax_results_spectra.legend()
         st.pyplot(fig_results_spectra)
