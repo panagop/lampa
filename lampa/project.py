@@ -21,7 +21,7 @@ class LProject:
         if self.l_imput.calculator_type == 'LinearElasticCalculator':
             calc = pystrata.propagation.LinearElasticCalculator()
         # LCalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
-        elif self.l_imput.calculator_type == 'EquivalentElasticCalculator':
+        elif self.l_imput.calculator_type == 'EquivalentLinearCalculator':
             calc = pystrata.propagation.EquivalentLinearCalculator()
 
         calc(self.l_imput.time_series_motion.to_pystrata, profile,

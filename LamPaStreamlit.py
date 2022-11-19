@@ -21,6 +21,8 @@ from lampa.project import LProject
 from io import StringIO
 
 
+FREQS = np.logspace(-0.5, 2, num=500)
+
 
 st.title('1-D Seismic Site Response Analysis')
 
@@ -34,13 +36,13 @@ lpsi = LPyStrataInput.from_json_file('streamlit/ini.json')
 lproject = LProject(lpsi)
 
 
-############################################################################################################
-# Sidebar - Files - Input parameters - Options
-############################################################################################################
+# ******************************************************************
+# Sidebar / Files - Input parameters - Options
+# ******************************************************************
 
-###################
-# File
-###################
+###################################
+# Sidebar / Project input file
+###################################
 
 # st.sidebar.markdown('## Project input file')
 with st.sidebar.expander(label='Project input file', expanded=False):
@@ -70,9 +72,9 @@ with st.sidebar.expander(label='Project input file', expanded=False):
 
 st.sidebar.markdown('---')
 
-###################
-# Seismic Motion
-###################
+###################################
+# Sidebar / Seismic Motion
+###################################
 # st.sidebar.markdown('## Seismic Motion - Input')
 st_seismic_motion_sidebar = st.sidebar.expander(
     label='Load input seismic motion from file', expanded=False)
@@ -95,9 +97,9 @@ with st_seismic_motion_sidebar:
 st.sidebar.markdown('---')
 
 
-###################
-# Soil Layers
-###################
+###################################
+# Sidebar / Soil Layers
+###################################
 
 # st.sidebar.markdown('## Soil Layers')
 with st.sidebar.expander(label='Soil Layers', expanded=False):
@@ -174,12 +176,24 @@ with st.sidebar.expander(label='Soil Layers', expanded=False):
 
 st.sidebar.markdown('---')
 
-############################################################################################################
-# Results
-############################################################################################################
-freqs = np.logspace(-0.5, 2, num=500)
+###################################
+# Sidebar / Calculator
+###################################
 
-# Sidebar
+st_calculator_sidebar_expander = st.sidebar.expander(
+    label='Calculator', expanded=False)
+with st_calculator_sidebar_expander:
+    calc_type = st.radio('Select calculator',
+                         options=['LinearElasticCalculator',
+                                  'EquivalentLinearCalculator'],
+                         key=lpsi.calculator_type)
+    lpsi.calculator_type = calc_type
+
+st.sidebar.markdown('---')
+
+###################################
+# Sidebar / Results
+###################################
 
 # st.sidebar.markdown('## Results')
 st_results_sidebar_expander = st.sidebar.expander(
@@ -191,9 +205,9 @@ with st_results_sidebar_expander:
 
 st.sidebar.markdown('---')
 
-###################
-# General Options
-###################
+###################################
+# Sidebar / General Options
+###################################
 
 # st.sidebar.markdown('## General Options')
 st_options_sidebar_expander = st.sidebar.expander(
@@ -202,19 +216,16 @@ with st_options_sidebar_expander:
     inteactive_charts = st.checkbox(label='Interactive charts', value=False)
 
     interactive_chart_theme = st.selectbox(label='Interactive chart theme',
-     options=['caliber', 'dark_minimal', 'light_minimal', 'night_sky', 'contrast'])
+                                           options=['caliber', 'dark_minimal', 'light_minimal', 'night_sky', 'contrast'])
 
     # https://discuss.streamlit.io/t/bokeh-theming/15302
-    doc=curdoc()
+    doc = curdoc()
     doc.theme = interactive_chart_theme
 
 
-
-
-
-############################################################################################################
+# ******************************************************************
 # Main view
-############################################################################################################
+# ******************************************************************
 
 ###################
 # Seismic Motion
@@ -243,7 +254,8 @@ with st_seismic_motion_main_expander:
     st.markdown(f'### Response spectrum - {100*results_damping:.1f}% damping')
     resp_spec = lproject.response_spectrum(damping=results_damping)
     if inteactive_charts:
-        p=figure(x_axis_type="log", y_axis_type="log", x_axis_label='Frequency (Hz)', y_axis_label='Spectral Acceleration (g)')
+        p = figure(x_axis_type="log", y_axis_type="log",
+                   x_axis_label='Frequency (Hz)', y_axis_label='Spectral Acceleration (g)')
         p.line(resp_spec.freqs, resp_spec.values)
         doc.add_root(p)
         st.bokeh_chart(p, use_container_width=True)
@@ -265,9 +277,6 @@ with st_soil_profile_main_expander:
 
     st.pyplot(lpsi.to_pystrata_profile.plot("initial_shear_vel").get_figure())
     # st.pyplot(lpsi.to_pystrata_profile.plot("shear_vel").get_figure())
-
-
-
 
 
 # profile = pystrata.site.Profile(list_layers).auto_discretize()
@@ -359,15 +368,18 @@ with st_results_main_expander:
 
     # Στην επιφάνεια
     out_index0 = lproject.response_spectrum(
-        freqs=freqs, damping=results_damping, location_index=0)
+        freqs=FREQS, damping=results_damping, location_index=0)
     # Στον βράχο
     out_index1 = lproject.response_spectrum(
-        freqs=freqs, damping=results_damping, location_index=-1)
+        freqs=FREQS, damping=results_damping, location_index=-1)
 
     if inteactive_charts:
-        p=figure(x_axis_label='Period (g)', y_axis_label='Spectral Acceleration (g)')
-        p.line(out_index0.periods, out_index0.values, legend_label='Ground surface', color='red')
-        p.line(out_index1.periods, out_index1.values, legend_label='Bedrock', color='blue')
+        p = figure(x_axis_label='Period (g)',
+                   y_axis_label='Spectral Acceleration (g)')
+        p.line(out_index0.periods, out_index0.values,
+               legend_label='Ground surface', color='red')
+        p.line(out_index1.periods, out_index1.values,
+               legend_label='Bedrock', color='blue')
         doc.add_root(p)
         st.bokeh_chart(p, use_container_width=True)
     else:
@@ -376,7 +388,8 @@ with st_results_main_expander:
             out_index0.periods, out_index0.values, linewidth=1.0, color='red', label='Ground surface')
         ax_results_spectra.plot(
             out_index1.periods, out_index1.values, linewidth=1.0, color='blue', label='Bedrock')
-        ax_results_spectra.set(xlabel='Period (s)', ylabel='Spectral Acceleration (g)')
+        ax_results_spectra.set(xlabel='Period (s)',
+                               ylabel='Spectral Acceleration (g)')
         ax_results_spectra.legend()
         st.pyplot(fig_results_spectra)
 
@@ -392,6 +405,3 @@ with st_results_main_expander:
 
     st.markdown('#### Fourier amplitude spectrum')
     st.pyplot(lproject.fourier_amplitude_spectrum().plot().get_figure())
-
-
-
