@@ -145,3 +145,8 @@ class LPyStrataInput:
         """Load from json file"""
         with open(filename, "r") as f:
             return LPyStrataInput.schema().loads(f.read())
+
+    # @staticmethod
+    # def from_json_binary(b: bytes) -> "LPyStrataInput":
+    #     """Load from json file"""
+    #     return LPyStrataInput.schema().loads(b)

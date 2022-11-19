@@ -6,6 +6,10 @@ import pystrata
 import pyexcel
 import json
 import pickle
+from bokeh.plotting import figure
+from bokeh.themes import built_in_themes
+from bokeh.io import curdoc
+
 
 import pystrata
 
@@ -14,6 +18,8 @@ from lampa.input import LTimeSeriesMotion
 from lampa.input import LSoilType, LDarendeliSoilType
 from lampa.input import LLayer
 from lampa.project import LProject
+
+from io import StringIO
 
 
 
@@ -28,84 +34,151 @@ lpsi = LPyStrataInput.from_json_file('streamlit/ini.json')
 
 lproject = LProject(lpsi)
 
-############################################################################################################
-# STEP 1: Load accelerogram
-############################################################################################################
-st.sidebar.markdown('## Seismic Motion')
-with st.sidebar.expander(label='Load accelerogram', expanded=False):
-    accel_filetype = st.radio('Select filetype', options=['xlsx', 'txt', 'csv']) # , 'AT2'
-    uploaded_file = st.file_uploader('Upload your file here', type=[accel_filetype])
 
-    if uploaded_file is not None:
+############################################################################################################
+# Options
+############################################################################################################
+
+# Sidebar
+
+st.sidebar.header('General Options')
+st_options_sidebar_expander = st.sidebar.expander(
+    label='General Options', expanded=False)
+with st_options_sidebar_expander:
+    inteactive_charts = st.checkbox(label='Interactive charts', value=False)
+
+    interactive_chart_theme = st.selectbox(label='Interactive chart theme',
+     options=['caliber', 'dark_minimal', 'light_minimal', 'night_sky', 'contrast'])
+
+    # https://discuss.streamlit.io/t/bokeh-theming/15302
+    doc=curdoc()
+    doc.theme = interactive_chart_theme
+
+
+
+############################################################################################################
+# File
+############################################################################################################
+
+# Sidebar
+st.sidebar.markdown('## Project input file')
+with st.sidebar.expander(label='Load/Save', expanded=False):
+    st.download_button('Save input file', LPyStrataInput.schema().dumps(
+        lpsi), 'lampa.json', 'application/json')
+
+    st.write('---')
+
+    uploaded_input = st.file_uploader('Load input file', type=['json'])
+    if uploaded_input is not None:
+        file_details = {"FileName": uploaded_input.name,
+                        "FileType": uploaded_input.type, "FileSize": uploaded_input.size}
+        st.write(file_details)
+
+        xxx = uploaded_input.read()
+        st.write(type(xxx))
+        lpsi = LPyStrataInput.from_json_binary(uploaded_input.read())
+        # st.write(str(xxx))
+
+        # stringio = StringIO(uploaded_input.getvalue().decode("utf-8"))
+        # lpsi = LPyStrataInput.from_dict(stringio.read())
+        # st.write((stringio.read()))
+        # lpsi = LPyStrataInput.from_json_file(stringio.read())
+        # lproject = LProject(lpsi)
+        # with open(uploaded_input, "rb") as pfile:
+        #     lpsi = pickle.load(pfile)
+
+
+############################################################################################################
+# Seismic Motion
+############################################################################################################
+
+# Sidebar
+st.sidebar.markdown('## Seismic Motion - Input')
+st_seismic_motion_sidebar = st.sidebar.expander(
+    label='Seismic motion - Input', expanded=False)
+with st_seismic_motion_sidebar:
+    accel_filetype = st.radio('Select filetype', options=[
+                              'xlsx', 'txt', 'csv'])  # , 'AT2'
+    uploaded_accel = st.file_uploader(
+        'Upload your file here', type=[accel_filetype])
+
+    if uploaded_accel is not None:
         if accel_filetype == 'txt':
-            ltsm = LTimeSeriesMotion.from_txt(uploaded_file)
+            ltsm = LTimeSeriesMotion.from_txt(uploaded_accel)
         elif accel_filetype == 'csv':
-            ltsm = LTimeSeriesMotion.from_csv(uploaded_file)
+            ltsm = LTimeSeriesMotion.from_csv(uploaded_accel)
         elif accel_filetype == 'xlsx':
-            ltsm = LTimeSeriesMotion.from_xlsx(uploaded_file)
+            ltsm = LTimeSeriesMotion.from_excel(uploaded_accel)
 
         lpsi.time_series_motion = ltsm
-        # input_data['accel_file'] = uploaded_file.name
-        # ts = time_accel_txt_to_pystrata_motion(uploaded_file)
-    else:
-        pass
-        # ts = time_accel_txt_to_pystrata_motion(input_data['accel_file'])
 
 
-st.markdown('## Soil profile')
-st.pyplot(lpsi.to_pystrata_profile.plot("initial_shear_vel").get_figure())
-# st.pyplot(lpsi.to_pystrata_profile.plot("shear_vel").get_figure())
-
+# Main
 st.markdown('## Seismic motion')
-st.markdown('### Accelerations')
-fig, ax = plt.subplots()
-ax.plot(lpsi.time_series_motion.to_pystrata.times, lpsi.time_series_motion.to_pystrata.accels)
-ax.set(xlabel='time (s)', ylabel='acceleration (g)')
-fig.tight_layout()
 
-st.pyplot(fig)
-st.markdown('### Response spectrum')
-st.pyplot(lproject.response_spectrum().plot().get_figure())
+st_seismic_motion_main_expander = st.expander(
+    label='Seismic motion', expanded=False)
+with st_seismic_motion_main_expander:
 
+    st.markdown('### Accelerations')
+    if inteactive_charts:
+        dt_accel = pd.DataFrame(data={'Time': lpsi.time_series_motion.to_pystrata.times,
+                                'Acceleration (g)': lpsi.time_series_motion.to_pystrata.accels})
+        st.line_chart(data=dt_accel, x='Time', y='Acceleration (g)')
+    else:
+        fig, ax = plt.subplots()
+        ax.plot(lpsi.time_series_motion.to_pystrata.times,
+                lpsi.time_series_motion.to_pystrata.accels)
+        ax.set(xlabel='time (s)', ylabel='acceleration (g)')
+        fig.tight_layout()
+        st.pyplot(fig)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# st.markdown('#### ***Time Series Motion Image Plot***')
-
-# fig, ax = plt.subplots()
-# ax.plot(ts.times, ts.accels)
-# ax.set(xlabel='time (s)', ylabel='acceleration (g)')
-# fig.tight_layout()
-# st.pyplot(fig)
-
-# motion = pystrata.motion.TimeSeriesMotion(
-#     f'{uploaded_file}', description='', time_step=ts.time_step, accels=ts.accels)
+    st.markdown('### Response spectrum')
+    resp_spec = lproject.response_spectrum(damping=0.05)
+    if inteactive_charts:
+        # dt_resp_spec = pd.DataFrame(data={'Frequency (Hz)': resp_spec.freqs,
+        #                         'Spectral Acceleration (g)': resp_spec.values})
+        # st.line_chart(data=dt_resp_spec, x='Frequency (Hz)', y='Spectral Acceleration (g)')
+        p=figure(x_axis_type="log", y_axis_type="log")
+        p.line(resp_spec.freqs, resp_spec.values)
+        doc.add_root(p)
+        st.bokeh_chart(p, use_container_width=True)
 
 
-# input_data['strain_limit'] = st.sidebar.number_input(
-#     label='strain limit', value=input_data['strain_limit'], format='%.3f')
-# input_data['damping'] = st.sidebar.number_input(
-#     label='damping', value=input_data['damping'], format='%.3f')
+    else:
+        st.pyplot(resp_spec.plot().get_figure())
 
-# st.sidebar.header('STEP 2: Define Soil Layers')
-# with st.sidebar.expander(label='Soil Layers', expanded=False):
-#     ############################################################################################################
-#     # STEP 2: Select Soil Layers
-#     ############################################################################################################
 
-#     no_layers = st.slider('Number of Layers', 1, 20, 1)
+############################################################################################################
+# Soil profile
+############################################################################################################
+
+# Main
+st.markdown('## Soil profile')
+
+st_soil_profile_main_expander = st.expander(
+    label='Soil profile', expanded=False)
+with st_soil_profile_main_expander:
+
+    st.pyplot(lpsi.to_pystrata_profile.plot("initial_shear_vel").get_figure())
+    # st.pyplot(lpsi.to_pystrata_profile.plot("shear_vel").get_figure())
+
+
+st.sidebar.header('Soil Layers')
+with st.sidebar.expander(label='Soil Layers', expanded=False):
+
+    layers = lpsi.layers
+
+    no_layers = st.slider('Number of Layers', 1, 20, len(layers))
+
+    layer_names = [f'Layer {i}' for i in range(1, len(layers)+1)]
+
+    layer_tabs = st.tabs(layer_names)
+
+    for i, layer in enumerate(layers):
+        with layer_tabs[i]:
+            st_layer = {}
+
 
 #     layer_names = [f'Layer {i}' for i in range(1, no_layers+1)]
 
@@ -168,6 +241,24 @@ st.pyplot(lproject.response_spectrum().plot().get_figure())
 # profile = pystrata.site.Profile(list_layers).auto_discretize()
 
 
+# st.markdown('#### ***Time Series Motion Image Plot***')
+
+# fig, ax = plt.subplots()
+# ax.plot(ts.times, ts.accels)
+# ax.set(xlabel='time (s)', ylabel='acceleration (g)')
+# fig.tight_layout()
+# st.pyplot(fig)
+
+# motion = pystrata.motion.TimeSeriesMotion(
+#     f'{uploaded_file}', description='', time_step=ts.time_step, accels=ts.accels)
+
+
+# input_data['strain_limit'] = st.sidebar.number_input(
+#     label='strain limit', value=input_data['strain_limit'], format='%.3f')
+# input_data['damping'] = st.sidebar.number_input(
+#     label='damping', value=input_data['damping'], format='%.3f')
+
+
 # calc = pystrata.propagation.EquivalentLinearCalculator(
 #     strain_limit=input_data['strain_limit'])
 
@@ -222,3 +313,56 @@ st.pyplot(lproject.response_spectrum().plot().get_figure())
 
 
 # st.write(input_data['strain_limit'])
+
+
+############################################################################################################
+# Results
+############################################################################################################
+freqs = np.logspace(-0.5, 2, num=500)
+
+# Sidebar
+
+st.sidebar.header('Results')
+st_results_sidebar_expander = st.sidebar.expander(
+    label='Results options', expanded=False)
+with st_results_sidebar_expander:
+    results_damping = st.number_input(
+        label='damping', value=0.05, format='%.3f')
+
+
+# Main
+st.markdown('## Results')
+
+st_results_main_expander = st.expander(label='Results', expanded=False)
+with st_results_main_expander:
+
+    st.markdown('#### Response Spectrum - bedrock vs ground surface')
+
+    # Στην επιφάνεια
+    out_index0 = lproject.response_spectrum(
+        freqs=freqs, damping=results_damping, location_index=0)
+    # Στον βράχο
+    out_index1 = lproject.response_spectrum(
+        freqs=freqs, damping=results_damping, location_index=-1)
+    fig_results_spectra, ax_results_spectra = plt.subplots()
+    ax_results_spectra.plot(
+        out_index0.periods, out_index0.values, linewidth=2.0)
+    ax_results_spectra.plot(
+        out_index1.periods, out_index1.values, linewidth=2.0)
+    st.pyplot(fig_results_spectra)
+
+    st.markdown('#### Response spectrum')
+    st.pyplot(lproject.response_spectrum(location_index=-1,
+              damping=results_damping).plot().get_figure())
+
+    st.markdown('#### Transfer function')
+    st.pyplot(lproject.accel_transfer_function().plot().get_figure())
+
+    st.markdown('#### Response_spectrum_ratio')
+    st.pyplot(lproject.response_spectrum_ratio().plot().get_figure())
+
+    st.markdown('#### Fourier amplitude spectrum')
+    st.pyplot(lproject.fourier_amplitude_spectrum().plot().get_figure())
+
+
+
