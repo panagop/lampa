@@ -10,7 +10,6 @@ from bokeh.plotting import figure
 from bokeh.themes import built_in_themes
 from bokeh.io import curdoc
 
-
 import pystrata
 
 from lampa.input import LPyStrataInput
@@ -36,33 +35,15 @@ lproject = LProject(lpsi)
 
 
 ############################################################################################################
-# Options
+# Sidebar - Files - Input parameters - Options
 ############################################################################################################
 
-# Sidebar
-
-st.sidebar.header('General Options')
-st_options_sidebar_expander = st.sidebar.expander(
-    label='General Options', expanded=False)
-with st_options_sidebar_expander:
-    inteactive_charts = st.checkbox(label='Interactive charts', value=False)
-
-    interactive_chart_theme = st.selectbox(label='Interactive chart theme',
-     options=['caliber', 'dark_minimal', 'light_minimal', 'night_sky', 'contrast'])
-
-    # https://discuss.streamlit.io/t/bokeh-theming/15302
-    doc=curdoc()
-    doc.theme = interactive_chart_theme
-
-
-
-############################################################################################################
+###################
 # File
-############################################################################################################
+###################
 
-# Sidebar
-st.sidebar.markdown('## Project input file')
-with st.sidebar.expander(label='Load/Save', expanded=False):
+# st.sidebar.markdown('## Project input file')
+with st.sidebar.expander(label='Project input file', expanded=False):
     st.download_button('Save input file', LPyStrataInput.schema().dumps(
         lpsi), 'lampa.json', 'application/json')
 
@@ -87,15 +68,14 @@ with st.sidebar.expander(label='Load/Save', expanded=False):
         # with open(uploaded_input, "rb") as pfile:
         #     lpsi = pickle.load(pfile)
 
+st.sidebar.markdown('---')
 
-############################################################################################################
+###################
 # Seismic Motion
-############################################################################################################
-
-# Sidebar
-st.sidebar.markdown('## Seismic Motion - Input')
+###################
+# st.sidebar.markdown('## Seismic Motion - Input')
 st_seismic_motion_sidebar = st.sidebar.expander(
-    label='Seismic motion - Input', expanded=False)
+    label='Load input seismic motion from file', expanded=False)
 with st_seismic_motion_sidebar:
     accel_filetype = st.radio('Select filetype', options=[
                               'xlsx', 'txt', 'csv'])  # , 'AT2'
@@ -112,59 +92,14 @@ with st_seismic_motion_sidebar:
 
         lpsi.time_series_motion = ltsm
 
-
-# Main
-st.markdown('## Seismic motion')
-
-st_seismic_motion_main_expander = st.expander(
-    label='Seismic motion', expanded=False)
-with st_seismic_motion_main_expander:
-
-    st.markdown('### Accelerations')
-    if inteactive_charts:
-        dt_accel = pd.DataFrame(data={'Time': lpsi.time_series_motion.to_pystrata.times,
-                                'Acceleration (g)': lpsi.time_series_motion.to_pystrata.accels})
-        st.line_chart(data=dt_accel, x='Time', y='Acceleration (g)')
-    else:
-        fig, ax = plt.subplots()
-        ax.plot(lpsi.time_series_motion.to_pystrata.times,
-                lpsi.time_series_motion.to_pystrata.accels)
-        ax.set(xlabel='time (s)', ylabel='acceleration (g)')
-        fig.tight_layout()
-        st.pyplot(fig)
-
-    st.markdown('### Response spectrum')
-    resp_spec = lproject.response_spectrum(damping=0.05)
-    if inteactive_charts:
-        # dt_resp_spec = pd.DataFrame(data={'Frequency (Hz)': resp_spec.freqs,
-        #                         'Spectral Acceleration (g)': resp_spec.values})
-        # st.line_chart(data=dt_resp_spec, x='Frequency (Hz)', y='Spectral Acceleration (g)')
-        p=figure(x_axis_type="log", y_axis_type="log")
-        p.line(resp_spec.freqs, resp_spec.values)
-        doc.add_root(p)
-        st.bokeh_chart(p, use_container_width=True)
+st.sidebar.markdown('---')
 
 
-    else:
-        st.pyplot(resp_spec.plot().get_figure())
+###################
+# Soil Layers
+###################
 
-
-############################################################################################################
-# Soil profile
-############################################################################################################
-
-# Main
-st.markdown('## Soil profile')
-
-st_soil_profile_main_expander = st.expander(
-    label='Soil profile', expanded=False)
-with st_soil_profile_main_expander:
-
-    st.pyplot(lpsi.to_pystrata_profile.plot("initial_shear_vel").get_figure())
-    # st.pyplot(lpsi.to_pystrata_profile.plot("shear_vel").get_figure())
-
-
-st.sidebar.header('Soil Layers')
+# st.sidebar.markdown('## Soil Layers')
 with st.sidebar.expander(label='Soil Layers', expanded=False):
 
     layers = lpsi.layers
@@ -236,6 +171,103 @@ with st.sidebar.expander(label='Soil Layers', expanded=False):
 
 # list_layers.append(pystrata.site.Layer(
 #     pystrata.site.SoilType("Rock", 23.0, None, 0.02), 0, 1200))
+
+st.sidebar.markdown('---')
+
+############################################################################################################
+# Results
+############################################################################################################
+freqs = np.logspace(-0.5, 2, num=500)
+
+# Sidebar
+
+# st.sidebar.markdown('## Results')
+st_results_sidebar_expander = st.sidebar.expander(
+    label='Results options', expanded=False)
+with st_results_sidebar_expander:
+    results_damping = st.number_input(
+        label='damping', value=0.05, format='%.3f')
+
+
+st.sidebar.markdown('---')
+
+###################
+# General Options
+###################
+
+# st.sidebar.markdown('## General Options')
+st_options_sidebar_expander = st.sidebar.expander(
+    label='General Options', expanded=False)
+with st_options_sidebar_expander:
+    inteactive_charts = st.checkbox(label='Interactive charts', value=False)
+
+    interactive_chart_theme = st.selectbox(label='Interactive chart theme',
+     options=['caliber', 'dark_minimal', 'light_minimal', 'night_sky', 'contrast'])
+
+    # https://discuss.streamlit.io/t/bokeh-theming/15302
+    doc=curdoc()
+    doc.theme = interactive_chart_theme
+
+
+
+
+
+############################################################################################################
+# Main view
+############################################################################################################
+
+###################
+# Seismic Motion
+###################
+
+
+st.markdown('## Seismic motion')
+
+st_seismic_motion_main_expander = st.expander(
+    label='Seismic motion', expanded=False)
+with st_seismic_motion_main_expander:
+
+    st.markdown('### Accelerations')
+    if inteactive_charts:
+        dt_accel = pd.DataFrame(data={'Time': lpsi.time_series_motion.to_pystrata.times,
+                                'Acceleration (g)': lpsi.time_series_motion.to_pystrata.accels})
+        st.line_chart(data=dt_accel, x='Time', y='Acceleration (g)')
+    else:
+        fig, ax = plt.subplots()
+        ax.plot(lpsi.time_series_motion.to_pystrata.times,
+                lpsi.time_series_motion.to_pystrata.accels)
+        ax.set(xlabel='time (s)', ylabel='acceleration (g)')
+        fig.tight_layout()
+        st.pyplot(fig)
+
+    st.markdown(f'### Response spectrum - {100*results_damping:.1f}% damping')
+    resp_spec = lproject.response_spectrum(damping=results_damping)
+    if inteactive_charts:
+        p=figure(x_axis_type="log", y_axis_type="log", x_axis_label='Frequency (Hz)', y_axis_label='Spectral Acceleration (g)')
+        p.line(resp_spec.freqs, resp_spec.values)
+        doc.add_root(p)
+        st.bokeh_chart(p, use_container_width=True)
+
+    else:
+        st.pyplot(resp_spec.plot().get_figure())
+
+
+############################################################################################################
+# Soil profile
+############################################################################################################
+
+# Main
+st.markdown('## Soil profile')
+
+st_soil_profile_main_expander = st.expander(
+    label='Soil profile', expanded=False)
+with st_soil_profile_main_expander:
+
+    st.pyplot(lpsi.to_pystrata_profile.plot("initial_shear_vel").get_figure())
+    # st.pyplot(lpsi.to_pystrata_profile.plot("shear_vel").get_figure())
+
+
+
 
 
 # profile = pystrata.site.Profile(list_layers).auto_discretize()
@@ -318,19 +350,6 @@ with st.sidebar.expander(label='Soil Layers', expanded=False):
 ############################################################################################################
 # Results
 ############################################################################################################
-freqs = np.logspace(-0.5, 2, num=500)
-
-# Sidebar
-
-st.sidebar.header('Results')
-st_results_sidebar_expander = st.sidebar.expander(
-    label='Results options', expanded=False)
-with st_results_sidebar_expander:
-    results_damping = st.number_input(
-        label='damping', value=0.05, format='%.3f')
-
-
-# Main
 st.markdown('## Results')
 
 st_results_main_expander = st.expander(label='Results', expanded=False)
@@ -344,12 +363,22 @@ with st_results_main_expander:
     # Στον βράχο
     out_index1 = lproject.response_spectrum(
         freqs=freqs, damping=results_damping, location_index=-1)
-    fig_results_spectra, ax_results_spectra = plt.subplots()
-    ax_results_spectra.plot(
-        out_index0.periods, out_index0.values, linewidth=2.0)
-    ax_results_spectra.plot(
-        out_index1.periods, out_index1.values, linewidth=2.0)
-    st.pyplot(fig_results_spectra)
+
+    if inteactive_charts:
+        p=figure(x_axis_label='Period (g)', y_axis_label='Spectral Acceleration (g)')
+        p.line(out_index0.periods, out_index0.values, legend_label='Ground surface', color='red')
+        p.line(out_index1.periods, out_index1.values, legend_label='Bedrock', color='blue')
+        doc.add_root(p)
+        st.bokeh_chart(p, use_container_width=True)
+    else:
+        fig_results_spectra, ax_results_spectra = plt.subplots()
+        ax_results_spectra.plot(
+            out_index0.periods, out_index0.values, linewidth=1.0, color='red', label='Ground surface')
+        ax_results_spectra.plot(
+            out_index1.periods, out_index1.values, linewidth=1.0, color='blue', label='Bedrock')
+        ax_results_spectra.set(xlabel='Period (s)', ylabel='Spectral Acceleration (g)')
+        ax_results_spectra.legend()
+        st.pyplot(fig_results_spectra)
 
     st.markdown('#### Response spectrum')
     st.pyplot(lproject.response_spectrum(location_index=-1,
