@@ -95,3 +95,9 @@ class LProject:
 
         out(self.calculator)
         return out  
+
+    
+    def max_strain_profile(self):
+        out = pystrata.output.MaxStrainProfile()
+        out(self.calculator)
+        return out
