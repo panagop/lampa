@@ -21,57 +21,15 @@ from lampa.project import LProject
 
 FREQS = np.logspace(-0.5, 2, num=500)
 
-##############################################
-# GUI - session state functions
-##############################################
-
-def update_motion_description():
-    st.session_state['lproject'].l_input.time_series_motion.description = st.session_state['motion_description']
-    
-def update_project_description():
-    st.session_state['lproject'].l_input.description = st.session_state['project_description']
-
-def uploader_accel_changed():
-    uploaded_accel = st.session_state['file_uploader_accel']
-    if uploaded_accel is not None:
-        if accel_filetype == 'txt':
-            ltsm = LTimeSeriesMotion.from_txt(uploaded_accel)
-        elif accel_filetype == 'csv':
-            ltsm = LTimeSeriesMotion.from_csv(uploaded_accel)
-        elif accel_filetype == 'xlsx':
-            ltsm = LTimeSeriesMotion.from_excel(uploaded_accel)
-        ltsm.description = uploaded_accel.name
-
-        st.session_state['motion_description'] = ltsm.description
-        st.session_state['lproject'].l_input.time_series_motion = ltsm
-
-def uploader_input_json_changed():
-    uploaded_input = st.session_state['file_uploader_input_json']
-    if uploaded_input is not None:
-        file_details = {"FileName": uploaded_input.name,
-                        "FileType": uploaded_input.type, "FileSize": uploaded_input.size}
-
-        utf_read = uploaded_input.read().decode('utf-8')
-        st.session_state['lproject'].l_input = LPyStrataInput.schema().loads(utf_read)
-        st.session_state['motion_description'] = st.session_state['lproject'].l_input.time_series_motion.description
-        st.session_state['project_description'] = st.session_state['lproject'].l_input.description
-        st.session_state['calculator'] = st.session_state['lproject'].l_input.calculator_type
-
-
-def update_calculator():
-    st.session_state['lproject'].l_input.calculator_type = st.session_state['calculator']
-
-
 ################################################
 # Session state initialization
 ################################################
-# if 'linput' not in st.session_state:
-#     st.session_state['linput'] = LPyStrataInput.from_json_file(
-#         'streamlit/ini.json')
+if 'linput' not in st.session_state:
+    st.session_state['linput'] = LPyStrataInput.from_json_file(
+        'streamlit/ini.json')
 
 if 'lproject' not in st.session_state:
-    st.session_state['lproject'] = LProject(l_input=LPyStrataInput.from_json_file(
-        'streamlit/ini.json'))
+    st.session_state['lproject'] = LProject(st.session_state['linput'])
 
 if 'interactive_charts' not in st.session_state:
     st.session_state['interactive_charts'] = False
@@ -80,14 +38,8 @@ if 'interactive_charts_theme' not in st.session_state:
     st.session_state['interactive_charts_theme'] = 'light_minimal'
 
 if 'motion_description' not in st.session_state:
-    st.session_state['motion_description'] = st.session_state['lproject'].l_input.time_series_motion.description
+    st.session_state['motion_description'] = ''
 
-if 'project_description' not in st.session_state:
-    st.session_state['project_description'] = st.session_state['lproject'].l_input.description
-
-if 'calculator' not in st.session_state:
-    st.session_state['calculator'] = st.session_state['lproject'].l_input.calculator_type 
-    # EquivalentLinearCalculator or LinearElasticCalculator
 
 ################################################
 # Intro text
@@ -98,32 +50,31 @@ st.title('1-D Seismic Site Response Analysis')
 st.markdown('This is a web application for one-dimensional site response analysis using linear elastic and equivalent linear analysis.')
 
 st.image('streamlit/img/DaPan.png', width=650)
-st.markdown('(Image source: [DOI: 10.1785/0120210300](https://pubs.geoscienceworld.org/ssa/bssa/article/doi/10.1785/0120210300/612887/Deep-Neural-Network-Based-Estimation-of-Site))')
+st.markdown('[Source: DOI: 10.1785/0120210300](https://pubs.geoscienceworld.org/ssa/bssa/article/doi/10.1785/0120210300/612887/Deep-Neural-Network-Based-Estimation-of-Site)')
 
 
 # ******************************************************************
 # Sidebar / Files - Input parameters - Options
 # ******************************************************************
 
-#########################################################
-# Sidebar / Import/export input .json file
-#########################################################
-with st.sidebar.expander(label="Import/export input .json file", expanded=False):
-
-    st.text_input(label='Project description',
-                key='project_description', on_change=update_project_description)
-
-    st.write('---')
+###################################
+# Sidebar / Project input file
+###################################
+with st.sidebar.expander(label='Import/export input file', expanded=False):
 
     # Save json input file
     st.download_button('Save input file', LPyStrataInput.schema().dumps(
-        st.session_state['lproject'].l_input), 'lampa.json', 'json')
+        st.session_state['linput']), 'lampa.json', 'application/json')
 
     st.write('---')
     # Load json input file
-    st.file_uploader(
-        'Upload your input json file here', type=['json'],
-        key='file_uploader_input_json', on_change=uploader_input_json_changed)
+    uploaded_input = st.file_uploader('Load input file', type=['json'])
+    if uploaded_input is not None:
+        file_details = {"FileName": uploaded_input.name,
+                        "FileType": uploaded_input.type, "FileSize": uploaded_input.size}
+
+        utf_read = uploaded_input.read().decode('utf-8')
+        st.session_state['linput'] = LPyStrataInput.schema().loads(utf_read)
 
 st.sidebar.markdown('---')
 
@@ -132,28 +83,36 @@ st.sidebar.markdown('---')
 ###################################
 
 
+def update_motion_description():
+    st.session_state['linput'].time_series_motion.description = st.session_state['motion_description']
+
+
 # st.sidebar.markdown('## Seismic Motion - Input')
 st_seismic_motion_sidebar = st.sidebar.expander(
-    label='Seismic input motion', expanded=False)
+    label='Load input seismic motion from file', expanded=False)
 with st_seismic_motion_sidebar:
-
-    # st.markdown('### Input motion description')
-    st.text_input(label='Input motion description',
-                key='motion_description', on_change=update_motion_description)
-    
-    st.write('---')
-
-    st.markdown('### Load new acceleration time series')
-
     accel_filetype = st.radio('Select filetype', options=[
                               'xlsx', 'txt', 'csv'])  # , 'AT2'
+    uploaded_accel = st.file_uploader(
+        'Upload your file here', type=[accel_filetype])
 
-    st.file_uploader(
-        'Upload your accelerogram file here', type=[accel_filetype],
-        key='file_uploader_accel', on_change=uploader_accel_changed)
+    if uploaded_accel is not None:
+        if accel_filetype == 'txt':
+            ltsm = LTimeSeriesMotion.from_txt(uploaded_accel)
+        elif accel_filetype == 'csv':
+            ltsm = LTimeSeriesMotion.from_csv(uploaded_accel)
+        elif accel_filetype == 'xlsx':
+            ltsm = LTimeSeriesMotion.from_excel(uploaded_accel)
+        ltsm.description = uploaded_accel.name
 
+        st.session_state['motion_description'] = ltsm.description
+        st.session_state['linput'].time_series_motion = ltsm
 
+    st.markdown('### Motion description')
+    st.text_input(label='Motion description',
+                  key='motion_description', on_change=update_motion_description)
 
+    st.markdown(f"{st.session_state['linput'].time_series_motion.description}")
 
 
 st.sidebar.markdown('---')
@@ -166,7 +125,7 @@ st.sidebar.markdown('---')
 # st.sidebar.markdown('## Soil Layers')
 with st.sidebar.expander(label='Soil Layers', expanded=False):
 
-    layers = st.session_state['lproject'].l_input.layers
+    layers = st.session_state['linput'].layers
 
     no_layers = st.slider('Number of Layers', 1, 20, len(layers))
 
@@ -245,16 +204,11 @@ st.sidebar.markdown('---')
 st_calculator_sidebar_expander = st.sidebar.expander(
     label='Calculator', expanded=False)
 with st_calculator_sidebar_expander:
-    # calc_type = st.radio('Select calculator',
-    #                      options=['LinearElasticCalculator',
-    #                               'EquivalentLinearCalculator'],
-    #                      key=st.session_state['lproject'].l_input.calculator_type)
-    # st.session_state['lproject'].l_input.calculator_type = calc_type
-
-    st.radio('Select calculator',
+    calc_type = st.radio('Select calculator',
                          options=['LinearElasticCalculator',
                                   'EquivalentLinearCalculator'],
-                         key='calculator', on_change=update_calculator)
+                         key=st.session_state['linput'].calculator_type)
+    st.session_state['linput'].calculator_type = calc_type
 
 st.sidebar.markdown('---')
 
@@ -316,19 +270,17 @@ with st_seismic_motion_main_expander:
     st.markdown('### Accelerations')
     if st.session_state['interactive_charts']:
         p = figure(x_axis_label='Time (sec)',
-                   y_axis_label='Acceleration (g)',
-                   title=st.session_state['motion_description'])
-        p.line(st.session_state['lproject'].l_input.time_series_motion.to_pystrata.times,
-               st.session_state['lproject'].l_input.time_series_motion.to_pystrata.accels)
+                   y_axis_label='Acceleration (g)')
+        p.line(st.session_state['linput'].time_series_motion.to_pystrata.times,
+               st.session_state['linput'].time_series_motion.to_pystrata.accels)
         doc.add_root(p)
         st.bokeh_chart(p, use_container_width=True)
 
     else:
         fig, ax = plt.subplots()
-        ax.plot(st.session_state['lproject'].l_input.time_series_motion.to_pystrata.times,
-                st.session_state['lproject'].l_input.time_series_motion.to_pystrata.accels)
+        ax.plot(st.session_state['linput'].time_series_motion.to_pystrata.times,
+                st.session_state['linput'].time_series_motion.to_pystrata.accels)
         ax.set(xlabel='time (s)', ylabel='acceleration (g)')
-        ax.set_title(st.session_state['motion_description'])
         fig.tight_layout()
         st.pyplot(fig)
 
@@ -357,7 +309,7 @@ st_soil_profile_main_expander = st.expander(
     label='Soil profile', expanded=False)
 with st_soil_profile_main_expander:
 
-    st.pyplot(st.session_state['lproject'].l_input.to_pystrata_profile.plot(
+    st.pyplot(st.session_state['linput'].to_pystrata_profile.plot(
         "initial_shear_vel").get_figure())
     # st.pyplot(linput.to_pystrata_profile.plot("shear_vel").get_figure())
 
@@ -503,7 +455,7 @@ with st_results_main_expander:
         st.pyplot(accel_transfer_function.plot().get_figure())
 
     ############################################################################
-    st.markdown('#### Response spectrum ratio')
+    st.markdown('#### Response_spectrum_ratio')
     response_spectrum_ratio = st.session_state['lproject'].response_spectrum_ratio(
         freqs=FREQS, damping=results_damping)
     if st.session_state['interactive_charts']:

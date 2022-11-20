@@ -10,21 +10,22 @@ FREQS = np.logspace(-0.5, 2, num=500)
 
 @dataclass
 class LProject:
-    l_imput: LInput
+    l_input: LInput
 
-    @cached_property
+    # @cached_property
+    @property
     def calculator(self):
         # Create the profile
-        profile = self.l_imput.to_pystrata_profile
+        profile = self.l_input.to_pystrata_profile
 
         # LCalculatorType.LINEAR_ELASTIC_CALCULATOR:
-        if self.l_imput.calculator_type == 'LinearElasticCalculator':
+        if self.l_input.calculator_type == 'LinearElasticCalculator':
             calc = pystrata.propagation.LinearElasticCalculator()
         # LCalculatorType.EQUIVALENT_LINEAR_CALCULATOR:
-        elif self.l_imput.calculator_type == 'EquivalentLinearCalculator':
+        elif self.l_input.calculator_type == 'EquivalentLinearCalculator':
             calc = pystrata.propagation.EquivalentLinearCalculator()
 
-        calc(self.l_imput.time_series_motion.to_pystrata, profile,
+        calc(self.l_input.time_series_motion.to_pystrata, profile,
              profile.location("outcrop", index=-1))
 
         return calc

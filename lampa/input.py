@@ -114,26 +114,16 @@ class LLayer:
 @dataclass_json
 @dataclass
 class LPyStrataInput:
-    name: str
+    description: str
     calculator_type: str  # LCalculatorType
     time_series_motion: LTimeSeriesMotion
     layers: list[LLayer]
 
-    @cached_property
+    # @cached_property
+    @property
     def to_pystrata_profile(self) -> pystrata.site.Profile:
         """Convert to pystrata profile"""
         return pystrata.site.Profile([layer.to_pystrata for layer in self.layers]).auto_discretize()
-
-    # def save_json_file(self, filename: str):
-    #     """Save to json file"""
-    #     with open(filename, "w") as f:
-    #         f.write(self.to_json())
-
-    # @staticmethod
-    # def from_json_file(filename: str) -> "LPyStrataInput":
-    #     """Load from json file"""
-    #     with open(filename, "r") as f:
-    #         return LPyStrataInput.from_json(f.read())
 
     def save_json_file(self, filename: str):
         """Save to json file"""
@@ -145,8 +135,3 @@ class LPyStrataInput:
         """Load from json file"""
         with open(filename, "r") as f:
             return LPyStrataInput.schema().loads(f.read())
-
-    # @staticmethod
-    # def from_json_binary(b: bytes) -> "LPyStrataInput":
-    #     """Load from json file"""
-    #     return LPyStrataInput.schema().loads(b)
