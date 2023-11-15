@@ -9,7 +9,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "3.10.8"
+python = "3.10.11"
 notebook = "^6.5.2"
 jupyter = "^1.0.0"
 jupyterlab = "^3.5.0"
